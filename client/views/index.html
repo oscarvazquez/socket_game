@@ -1,0 +1,20 @@
+<html>
+<head>
+	<title>Socket game</title>
+	<script src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		console.log('asdfjlaksdf')
+		$(document).ready(function (){
+			var socket = io.connect("http://192.168.1.69:8000");
+			console.log('something');
+			something = {
+				name: "ajsldfkjasdf"
+			}
+			socket.emit('start', something);
+		})
+	</script>
+</head>
+<body>
+	<h3>aalsdkjfalk</h3>
+</body>

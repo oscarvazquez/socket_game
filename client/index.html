@@ -1,0 +1,240 @@
+<html>
+<head>
+	<title>Socket game</title>
+	<script src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.js"></script>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/foundation/5.5.1/css/foundation.min.css">
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		$(document).ready(function (){
+			name = prompt("what is your name?");
+			console.log(name);
+			var socket = io.connect("http://192.168.1.69:8000");
+			something = {
+				name: name
+			}
+			socket.emit('start', something);
+			$(".start_game").on('click', function(){
+				// game = Math.floor(Math.random() * 3);
+				game = 3;
+				console.log(game);
+				if (game == 0){
+					socket.emit('get_in_to_positions', "start");
+				}
+				else if (game == 1){
+					socket.emit('writting_game', "start");
+					console.log('it should be emitting this')
+				}
+				else {
+					socket.emit('riddle_game', "start");
+					console.log('game3')
+				}
+			})
+			socket.on("new_user", function(new_user){
+				$('.new_user').html(new_user);
+				console.log('its getting here');
+			})
+			socket.on('start_game', function(){
+				$(".starting_game").html('game will start in 3 seconds');
+				$(".rule").html('');
+				$('.game_board').html('');
+				setTimeout(function(){
+					console.log('game is starting');
+					$(".game_board").html("<div class = 'a'></div><div class = 'b'></div><div class = 'c'></div><div class = 'd'></div>")
+					animateDiv(0);
+				},300); 
+			})
+			socket.on('start_writting', function(game){
+				$(".starting_game").html('Game will start in 3 seconds');
+				setTimeout(function(){
+					console.log('writting game');
+					$(".write_out").html(game['answer']);
+					$(".rule").html(game['rule'])
+					$('.game_board').html("<div class = 'large-9 large-centered columns'><fieldset><legend><h3>Response</h3></legend><form class = 'test_form' name = 'test'><textarea type = 'text' name = 'response'></textarea><input type = 'submit' name = 'try_out' value = 'submit answer' class = 'button expand'></form></fieldset></div>")
+				}, 3000);
+			})
+			socket.on('riddling', function(game){
+				$(".starting_game").html('Game will start in 3 seconds');
+				setTimeout(function(){
+					console.log('riddle game');
+					$('.write_out').html(game['question'])
+					$(".rule").html(game['rule'])
+					$('.game_board').html("<div class = large-9 large-centered columns'><fieldset><legend><h3>Response</h3><form class = 'riddle_form' name = 'text_riddle'><select class = 'rid_options' name = 'rids'><option>Pick a Response</option></select><input type = 'submit' name = 'try_out' value = 'submit answer' class = 'button expand'></form></fieldset></div>")
+						console.log(game['option'][1])
+						for (var i = 0; i < game['option'].length; i++){
+							console.log('its going into the for loop')
+							if(game['option'][i] == game['answer'])
+							{
+								$('.rid_options').append($('<option>', {
+									value: "winner",
+									text: game['option'][i]
+								}))
+							}
+							else 
+							{
+								$('.rid_options').append($('<option>', {
+									value: game['option'][i],
+									text: game['option'][i]
+								}))
+							}
+						};
+					
+				}, 3000);
+			})
+			$(document).on('submit', '.test_form', function(){
+				var answer = $(".write_out").html();
+				var response = $(this).find("textarea[name='response']").val();
+				if (answer == response){
+					console.log('you won');
+					socket.emit('clicked', name);
+				}
+				else {
+					$(".wrong_answer").html("Wrong! Try Again!")
+				}
+				return false;
+			})
+			$(document).on('submit', '.riddle_form', function(){
+				var answer = $(".write_out").html();
+				var response = $(this).find("select[name='rids']").val();
+				$('.game_board').html('');
+				if (response == 'winner'){
+					console.log('you won');
+					socket.emit('clicked', name);
+				}
+				else {
+					$(".wrong_answer").html("Wrong! Try Again!")
+				}
+				return false;
+			})
+			$(document).on('click', '.a', function(){
+				socket.emit('clicked', name);
+			})
+			$(document).on('click', '.b', function(){
+				$(this).hide();
+			})
+			$(document).on('click', '.c', function(){
+				$(this).hide();
+			})
+			$(document).on('click', '.d', function(){
+				$(this).hide();
+			})
+			socket.on('loser', function(loser){
+				$(".game_board").html("")
+				$(".starting_game").html(loser);
+			})
+			socket.on('winner', function(winner){
+				$(".game_board").html("")
+				$(".starting_game").html(winner);
+			})
+		})
+		function makeNewPosition(){
+    
+		    // Get viewport dimensions (remove the dimension of the div)
+		    var h = $(window).height() - 50;
+		    var w = $(window).width() - 50;
+		    
+		    var nh = Math.floor(Math.random() * h);
+		    var nw = Math.floor(Math.random() * w);
+		    
+		    return [nh,nw];    
+		    
+		}
+
+		function animateDiv(counter){
+		    var newq = makeNewPosition();
+		    var oldq = $('.a').offset();
+		    var speed = calcSpeed([oldq.top, oldq.left], newq);
+		    $('.a').animate({ top: newq[0], left: newq[1] }, speed, function(){
+		    	console.log(counter);
+		    	if (counter > 3) {
+		    		console.log('counter' + counter);
+		    		$(this).css( {"background-color": 'red'});
+		    	}
+		    	newq = makeNewPosition();
+		    	oldq = $('.a').offset();
+		    	speed = calcSpeed([oldq.top, oldq.left], newq);
+		    	$('.b').animate({ top: newq[0], left: newq[1] }, speed, function(){
+		    			if(counter > 3)
+		    			{
+		    				$(this).css({ "background-color":'blue'});
+		    			}
+		    			newq = makeNewPosition();
+		    			oldq = $('.a').offset();
+		    			speed = calcSpeed([oldq.top, oldq.left], newq);
+		    		$('.c').animate({top: newq[0], left: newq[1] }, speed, function(){
+		    				if(counter > 3)
+		    				{
+		    					$(this).css( {"background-color":'green'});
+		    				}
+		    				counter += 1;
+		    				animateDiv(counter);
+		    		})
+		    	})       
+		   	});
+		    
+		};
+
+		function calcSpeed(prev, next) {
+		    
+		    var x = Math.abs(prev[1] - next[1]);
+		    var y = Math.abs(prev[0] - next[0]);
+		    
+		    var greatest = x > y ? x : y;
+		    
+		    var speedModifier = 0.6;
+
+		    var speed = Math.ceil(greatest/speedModifier);
+
+		    return speed;
+
+		}
+	</script>
+	<style>
+		*{
+		  -webkit-user-select: none;
+		  -khtml-user-select: none;
+		  -moz-user-select: none;
+		  user-select: none; 
+		}
+		.a{
+			width: 50px;
+			height:50px;
+			position:fixed;
+		}
+		.b{
+			width: 50px;
+			height:50px;
+			position:fixed;
+		}
+		.c{
+			width: 50px;
+			height:50px;
+			position:fixed;
+		}
+		.d{
+			width: 50px;
+			height:50px;
+			position:fixed;
+		}
+		.game_board{
+			height: 500px;
+			width: 500px;
+		}
+		.write_out{
+			text-align: center;
+		}
+		.rule{
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+<div class = "row">
+	<h3 class = "wrong_answer"></h3>
+	<h2 class = "starting_game"></h2>
+	<h5 class = "new_user"></h5>
+	<button class = "start_game button">Start Game</button>
+	<h1 class = "write_out"></h1>
+	<div class = "row rule"></div>
+	<div class = "row game_board"></div>
+</div>
+</body>
